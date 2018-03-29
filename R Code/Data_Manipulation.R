@@ -10,3 +10,5 @@ library(hms)
 
 # Add comments below here to try using git actions ####
 b <- 6+2
+(vector1 <- c(2,4,6)) 
+vector1
