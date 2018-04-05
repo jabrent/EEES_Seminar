@@ -8,16 +8,12 @@ tidyverse_packages()
 
 library(hms)
 
-# Add comments below here to try using git actions ####
-<<<<<<< HEAD
-b <- 6+2
-=======
-<<<<<<< HEAD
-
-b <-  6+2
+# Please add a comment below with your name to try using git actions ####
 
 # Braden testing push #
-=======
-b <- 6+2
->>>>>>> 85e406fcd97103b4ad4d376f0436208276ad76b5
->>>>>>> 776d89ffc46a757d89ee46ec39308409973ffb2e
+
+# Morgan testing push #
+
+# Clare testing push #
+
+# frank is also testing push #
