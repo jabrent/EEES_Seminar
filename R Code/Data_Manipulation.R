@@ -14,15 +14,8 @@ library(hms)
 
 # Morgan testing push #
 
-<<<<<<< HEAD
 # Clare testing push #
 
-||||||| merged common ancestors
-# Clare testing push #
-=======
-# Clare testing push #
+# Frank testing push #
 
-# frank is also testing push #
-  
-  #roger roger
->>>>>>> 9ba28e3c2340ded5caf52e69439a2b1cbd8fabf2
+# roger roger
