@@ -1,3 +1,0 @@
-# Data Visualization script 
-
-ggplot()
