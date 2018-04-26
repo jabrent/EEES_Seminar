@@ -1,6 +1,6 @@
 #### R Code for Data Manipulatin ####
 #Created by JAB March 2018 for EEES Seminar
-#Available on git hub class respository
+#Available on github class respository: https://github.com/jabrent/EEES_Seminar
 
 # Load Libraries ####
 install.packages("tidyverse") #Only need to install packages once but need to load the library every time you start a new R session
