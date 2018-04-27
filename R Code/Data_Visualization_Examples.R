@@ -201,19 +201,3 @@ plot()
 hist()
 # R colors - Color Brewer
 
-# Chernoff faces ####
-install.packages("aplpack")
-library(aplpack)
-faces(x=as.matrix(cdata[ilifew,c(8,7,9,6,4,2,3)]),
-                       labels=as.character(cdata$name[ilifew]))
-
-# Basic Scatterplot Matrix
-pairs(~mpg+disp+drat+wt,data=mtcars, 
-      main="Simple Scatterplot Matrix")
-
-# Scatterplot Matrices from the car Package
-library(car)
-scatterplot.matrix(~mpg+disp+drat+wt|cyl, data=mtcars,
-                   main="Three Cylinder Options")
-
-https://www.statmethods.net/graphs/scatterplot.html
