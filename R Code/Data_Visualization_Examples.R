@@ -201,3 +201,45 @@ plot()
 hist()
 # R colors - Color Brewer
 
+
+# Try plotly for interactive plots ####
+# Need a free acount to post plots but can use on own computer for free, works with Python and Matlab too
+# More info: https://plot.ly/r/getting-started/
+
+# Install package and load library
+install.packages("plotly")
+library(plotly) #Yes if needs compilation question comes up
+
+# Development version
+devtools::install_github("ropensci/plotly")
+
+#use dev version of ggplot2 with ggplotly()
+devtools::install_github('hadley/ggplot2')
+library(ggplot2)
+
+#Link plotly account through API
+# set plotly user name
+Sys.setenv("plotly_username"="YOUR_plotly_username")
+# set plotly API key
+Sys.setenv("plotly_api_key"="YOUR_api_key")
+
+#Basic functions
+plot_ly
+ggplotly
+
+#Example with ggplot
+diamond_freqpoly <-  ggplot(data = diamonds, mapping = aes(x = carat, colour = cut)) +
+        geom_freqpoly(binwidth = 0.1)
+
+ggplotly(diamond_freqpoly)
+
+#Base plot
+str(midwest) #demographic info of midwest counties
+p <- plot_ly(midwest, x = ~percollege, color = ~state, type = "box")
+p
+
+#double click to isolate one state
+
+# publish plotly plot to your plotly online account
+py
+api_create(p, filename = "r-docs-midwest-boxplots")
