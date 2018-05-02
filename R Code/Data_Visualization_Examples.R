@@ -1,4 +1,7 @@
-# Data Visualizations
+#### Data Visualizations ####
+# Created by JAB April 2018 for EEES Seminar
+# Available on github class respository: https://github.com/jabrent/EEES_Seminar
+
 
 # Install Packages ####
 library(tidyverse)
@@ -59,7 +62,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + #global mapping
 #Map color to categorical variable
 ggplot(data = mpg) + 
         geom_point(mapping = aes(x = displ, y = hwy, color = class))+
-        theme_bw()
+        theme_classic()
 
 #Map color to continuos variable, shape?
 ggplot(data = mpg) + 
@@ -121,31 +124,51 @@ ggplot(data = mpg) +
         geom_bar(mapping = aes(x = class)) #reorder with factor levels
 
 #Geoms that calculate new variables - bar, histogram, smoooth, boxplot
-#bar plots - bin data & plot bin counts
-#default stat = count
+#bar plots - bin data & plot bin counts (# of points that fall in each bin)
+#stat = statistical transformation
+#default stat = count, number in each category on x
+# If you instead want to have the height of the bar correspond to a variable you can change the stat to "identity" or use geom_col
+# stat = identity - height of bars = raw values of y variable 
+#geom_bar interchangeable with stat_count() 
 
 #To map value to y-aixs, use geom_col or geom_bar change stat to identity
 #Change stat to prop as well
+
+ggplot(data = mpg) +
+        geom_bar(mapping = aes(x = class, y = hwy), stat="identity") 
+
 ggplot(data = mpg) +
         geom_col(mapping = aes(x = class, y = hwy)) 
 
-ggplot(data = mpg) +
-        geom_bar(mapping = aes(x = class, y = hwy), stat) 
+# Example of other stat options
+ggplot(data = diamonds) + 
+        stat_summary(
+                mapping = aes(x = cut, y = depth),
+                fun.ymin = min,
+                fun.ymax = max,
+                fun.y = median
+        )
 
-View(mpg)
-
-# Positions - dodge, or fill bars
+# Position Adjustments - dodge & fill bars
 ggplot(mpg, aes(class))+ 
-        geom_bar(aes(fill = drv))
-ggplot(mpg, aes(class))+ 
-        geom_bar(aes(fill = drv), position = "fill")
+        geom_bar(aes(color = drv)) #color will only change the outline of the bars use fill instead for bar plots
 
-# Historgram ####
+ggplot(mpg, aes(class))+ 
+        geom_bar(aes(fill = drv)) #default stacked bar with variable plotted to fill
+
+# Change position - options = dodge, fill, identity
+# poistion dodge = places bars next to each for variable mapped to fill
+# position identity = overlaps each bar, can change with alpha or fill = NA
+# position fill = stacked bars all to the same height
+# position jitter = useful for scatterplots to jitter points if all overplotted, geom_jitter
+ggplot(mpg, aes(class))+ 
+        geom_bar(aes(fill = drv), position = "dodge") #more common than fill which creates stacked bar chart which are hard to visualize
+
+# Histogram ####
 ggplot(data = faithful, mapping = aes(x = eruptions)) + 
         geom_histogram(binwidth = 0.25)
 
 geom_freqpoly() #good for overlaying multiple histograms in same plot
-
 
 #Diamond example
 smaller <- diamonds %>% 
@@ -157,16 +180,6 @@ ggplot(data = smaller, mapping = aes(x = carat)) +
 ggplot(data = smaller, mapping = aes(x = carat, colour = cut)) +
         geom_freqpoly(binwidth = 0.1)
 
-# Replacing outliers with NA ####
-
-#if else statements - 3 arguments
-# 1. test = logical vector
-# 2. result if test is TRUE
-# 3. result if test is FALSE
-
-diamonds2 <- diamonds %>% 
-        mutate(y = ifelse(y < 3 | y > 20, NA, y))
-
 # Box plots ####
 #good for one categorical variable and one continuous variable
 ggplot(data = mpg, mapping = aes(x = class, y = hwy)) +
@@ -174,16 +187,48 @@ ggplot(data = mpg, mapping = aes(x = class, y = hwy)) +
 
 #change order
 ggplot(data = mpg) +
-        geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy)) + 
-        #coord_flip()
+        geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy))
+
 #reorder = similar to factor(x, levels)
         
 #2 categorical variables
 # often use plot with count
         
 #2 continuous variables - scatterplot
- 
+
+
+# Coordinate systems & Spatial Data ####
+# Default coordinate system is Cartesian coordinates
+coord_flip() #useful for horizontal boxplots or long labels
+
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) +
+        geom_boxplot()+ 
+        coord_flip()
+
+coord_quickmap() #correct aspect ratio for maps
+
+#using maps package
+nz <- map_data("nz")
+world <- map_data("world")
+
+ggplot(nz, aes(long, lat, group = group)) +
+        geom_polygon(fill = "white", color = "black")
+
+ggplot(nz, aes(long, lat, group = group)) +
+        geom_polygon(fill = "white", color = "black") + 
+        coord_quickmap()
+
+ggplot(world, aes(long, lat, group = group)) +
+        geom_polygon(fill = "white", color = "black") + 
+        coord_quickmap()
+
+# Polar coordinates
+coord_polar()
+
 # Themes and Clean Plots ####
+theme_classic() #great starting point!
+theme_bw() #black and white theme is also good
+
 theme_bw(base_family = "Times")+
         theme(axis.title.x = element_text(size=18),
               axis.title.y = element_text(size=18),
@@ -194,8 +239,11 @@ theme_bw(base_family = "Times")+
               panel.grid.major = element_blank(),
               panel.grid.minor = element_blank())
 
-#export
-ggsave("All_lakes_mom_chla.pdf", width=11, height=8.5)
+# Export plots ####
+ggsave("Name of plot.file type", width=11, height=8.5) #width and height are in inches but can change
+
+#will save most recent plot or can call specific one
+#Can support pdf, jpeg, eps, tiff, png 
 
 plot()
 hist()
