@@ -1,0 +1,293 @@
+#### Data Visualizations ####
+# Created by JAB April 2018 for EEES Seminar
+# Available on github class respository: https://github.com/jabrent/EEES_Seminar
+
+
+# Install Packages ####
+library(tidyverse)
+
+# Basic ggplot structure ####
+ggplot(data = <DATASET>)+ #add + at end of line 
+        <GEOM_FUNCTION>(mapping = aes(x = , y = , ... ))
+
+
+# 
+ggplot(data = <DATASET>) + 
+        <GEOM_FUNCTION>(
+                mapping = aes(<MAPPINGS>),
+                stat = <STAT>, 
+                position = <POSITION>
+        ) +
+        <COORDINATE_FUNCTION> + #switch x & y axis
+        <FACET_FUNCTION>
+        
+
+# Aesthetics options ####
+#options for asesthetics in addition to axis variables
+color
+alpha #transparency
+fill
+size #number in mm ex. 2 or 4
+linetype #0-6 or blank, solid, dashed, dotted, dotdash, longdash, twodash
+shape #max 6 shapes, integers 0-25
+
+# A look at all 25 symbols
+# Hollow shapes - border set with color = 0-14 
+# Solid shapes - color set with fill = 15-18
+# Filled shapes - set border with color and inside color with fill = 21-25
+df2 <- data.frame(x = 1:5 , y = 1:25, z = 1:25)
+s <- ggplot(df2, aes(x, y))+
+        geom_point(aes(shape = z), size = 4) +
+        scale_shape_identity()
+# While all symbols have a foreground colour, symbols 19-25 also take a
+# background colour (fill)
+s +
+geom_point(aes(shape = z), size = 4, colour = "Red") +
+        scale_shape_identity()
+s +
+geom_point(aes(shape = z), size = 4, colour = "Red", fill = "Black") +
+        scale_shape_identity()
+
+# Test dataset - mpg = US EPA data on 38 models of cars ####
+View(mpg) #displ = car's engine size, hwy = car's fuel efficiency mpg
+str(mpg)
+
+ggplot(data = mpg) + 
+        geom_point(mapping = aes(x = displ, y = hwy)) #local mapping
+                   
+#Add color - Local vs. Global mapping
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + #global mapping
+        geom_point(color = "blue") #go oustide aesthetic mapping
+
+#Map color to categorical variable
+ggplot(data = mpg) + 
+        geom_point(mapping = aes(x = displ, y = hwy, color = class))+
+        theme_classic()
+
+#Map color to continuos variable, shape?
+ggplot(data = mpg) + 
+        geom_point(mapping = aes(x = displ, y = hwy, color = cty)) #cty = city 
+
+# Facets ####
+
+#useful for categorical variables
+#facet_wrap() = facet by 1 variable
+#facet_grid() = facet by 2 variables
+
+#Instead of plotting class to color, facet by class
+ggplot(data = mpg) + 
+        geom_point(mapping = aes(x = displ, y = hwy)) + 
+        facet_wrap( ~ class) #, nrow = 2) # ~ tilda implies formula, use discrete variables (not continuous)
+
+#facet grip
+ggplot(data = mpg) + 
+        geom_point(mapping = aes(x = displ, y = hwy)) + 
+        facet_grid(drv ~ class)+ # ~ tilda implies formula
+        theme_classic()
+ggplot(data = mpg) + 
+        geom_point(mapping = aes(x = displ, y = hwy)) + 
+        facet_grid(class ~ .) #switches dimension to facet on
+
+
+# Add geom ####
+# geom = visual object that plot uses to represent data
+# Some examples
+geom_bar()
+geom_boxplot()
+geom_histogram()
+geom_line()
+geom_point()
+geom_text()
+geom_smooth()
+
+ggplot(data = mpg) + 
+        geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+?geom_smooth
+#geom_smooth = default loess for < 1000 obs, lm, glm
+
+# Add multiple geoms to same plot - beauty of ggplot layers!
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + #global mapping
+        geom_point() +
+        geom_smooth()
+
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = class)) + 
+        geom_point() + #local mapping overwrites global mapping
+        geom_smooth()
+
+#map different datasets to different geoms
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+        geom_point(mapping = aes(color = class)) + 
+        geom_smooth(data = filter(mpg, class == "subcompact"), se = FALSE) #se = F turns off confidence intervals around best fit line 
+
+# Bar plots vs. histograms ####
+ggplot(data = mpg) +
+        geom_bar(mapping = aes(x = class)) #reorder with factor levels
+
+#Geoms that calculate new variables - bar, histogram, smoooth, boxplot
+#bar plots - bin data & plot bin counts (# of points that fall in each bin)
+#stat = statistical transformation
+#default stat = count, number in each category on x
+# If you instead want to have the height of the bar correspond to a variable you can change the stat to "identity" or use geom_col
+# stat = identity - height of bars = raw values of y variable 
+#geom_bar interchangeable with stat_count() 
+
+#To map value to y-aixs, use geom_col or geom_bar change stat to identity
+#Change stat to prop as well
+
+ggplot(data = mpg) +
+        geom_bar(mapping = aes(x = class, y = hwy), stat="identity") 
+
+ggplot(data = mpg) +
+        geom_col(mapping = aes(x = class, y = hwy)) 
+
+# Example of other stat options
+ggplot(data = diamonds) + 
+        stat_summary(
+                mapping = aes(x = cut, y = depth),
+                fun.ymin = min,
+                fun.ymax = max,
+                fun.y = median
+        )
+
+# Position Adjustments - dodge & fill bars
+ggplot(mpg, aes(class))+ 
+        geom_bar(aes(color = drv)) #color will only change the outline of the bars use fill instead for bar plots
+
+ggplot(mpg, aes(class))+ 
+        geom_bar(aes(fill = drv)) #default stacked bar with variable plotted to fill
+
+# Change position - options = dodge, fill, identity
+# poistion dodge = places bars next to each for variable mapped to fill
+# position identity = overlaps each bar, can change with alpha or fill = NA
+# position fill = stacked bars all to the same height
+# position jitter = useful for scatterplots to jitter points if all overplotted, geom_jitter
+ggplot(mpg, aes(class))+ 
+        geom_bar(aes(fill = drv), position = "dodge") #more common than fill which creates stacked bar chart which are hard to visualize
+
+# Histogram ####
+ggplot(data = faithful, mapping = aes(x = eruptions)) + 
+        geom_histogram(binwidth = 0.25)
+
+geom_freqpoly() #good for overlaying multiple histograms in same plot
+
+#Diamond example
+smaller <- diamonds %>% 
+        filter(carat < 3)
+
+ggplot(data = smaller, mapping = aes(x = carat)) +
+        geom_histogram(binwidth = 0.1)
+
+ggplot(data = smaller, mapping = aes(x = carat, colour = cut)) +
+        geom_freqpoly(binwidth = 0.1)
+
+# Box plots ####
+#good for one categorical variable and one continuous variable
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) +
+        geom_boxplot()
+
+#change order
+ggplot(data = mpg) +
+        geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy))
+
+#reorder = similar to factor(x, levels)
+        
+#2 categorical variables
+# often use plot with count
+        
+#2 continuous variables - scatterplot
+
+
+# Coordinate systems & Spatial Data ####
+# Default coordinate system is Cartesian coordinates
+coord_flip() #useful for horizontal boxplots or long labels
+
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) +
+        geom_boxplot()+ 
+        coord_flip()
+
+coord_quickmap() #correct aspect ratio for maps
+
+#using maps package
+nz <- map_data("nz")
+world <- map_data("world")
+
+ggplot(nz, aes(long, lat, group = group)) +
+        geom_polygon(fill = "white", color = "black")
+
+ggplot(nz, aes(long, lat, group = group)) +
+        geom_polygon(fill = "white", color = "black") + 
+        coord_quickmap()
+
+ggplot(world, aes(long, lat, group = group)) +
+        geom_polygon(fill = "white", color = "black") + 
+        coord_quickmap()
+
+# Polar coordinates
+coord_polar()
+
+# Themes and Clean Plots ####
+theme_classic() #great starting point!
+theme_bw() #black and white theme is also good
+
+theme_bw(base_family = "Times")+
+        theme(axis.title.x = element_text(size=18),
+              axis.title.y = element_text(size=18),
+              axis.text=element_text(size=16,colour ="black"))+
+        theme(panel.border=element_blank(),
+              axis.line = element_line(color="black"),
+              plot.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank())
+
+# Export plots ####
+ggsave("Name of plot.file type", width=11, height=8.5) #width and height are in inches but can change
+
+#will save most recent plot or can call specific one
+#Can support pdf, jpeg, eps, tiff, png 
+
+plot()
+hist()
+# R colors - Color Brewer
+
+
+# Try plotly for interactive plots ####
+# Need a free acount to post plots but can use on own computer for free, works with Python and Matlab too
+# More info: https://plot.ly/r/getting-started/
+
+# Install package and load library
+install.packages("plotly")
+library(plotly) #Yes if needs compilation question comes up
+
+# Development version
+devtools::install_github("ropensci/plotly")
+
+#use dev version of ggplot2 with ggplotly()
+devtools::install_github('hadley/ggplot2')
+library(ggplot2)
+
+#Link plotly account through API
+# set plotly user name
+Sys.setenv("plotly_username"="YOUR_plotly_username")
+# set plotly API key
+Sys.setenv("plotly_api_key"="YOUR_api_key")
+
+#Basic functions
+plot_ly
+ggplotly
+
+#Example with ggplot
+diamond_freqpoly <-  ggplot(data = diamonds, mapping = aes(x = carat, colour = cut)) +
+        geom_freqpoly(binwidth = 0.1)
+
+ggplotly(diamond_freqpoly)
+
+#Base plot
+str(midwest) #demographic info of midwest counties
+p <- plot_ly(midwest, x = ~percollege, color = ~state, type = "box")
+p
+
+#double click to isolate one state
+
+# publish plotly plot to your plotly online account
+py
+api_create(p, filename = "r-docs-midwest-boxplots")

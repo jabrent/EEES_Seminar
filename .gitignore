@@ -2,9 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
-<<<<<<< HEAD
 *.DS_Store
-=======
 .DS_Store
+<<<<<<< HEAD
 >>>>>>> 59a86dc26cd8d8214427b9548d9da76ffb03d452
 April_12_dplyr.R
+=======
+>>>>>>> b7573e9f559ea3db9d06a400502d237d7cb3a8ca
