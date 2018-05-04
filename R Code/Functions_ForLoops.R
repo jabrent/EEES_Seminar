@@ -8,7 +8,7 @@
 #2. Any details 
 
 # Calculate standard error
-
+head(iris)
 standard.error <- sd(iris$Petal.Width)/sqrt(length(iris$Petal.Width))
 
 standard.error <- sd(x)/sqrt(length(x))
@@ -77,7 +77,7 @@ mean_ci <- function(x, conf = 0.95) { # x = data, conf = detail, most common val
 }
 
 x <- runif(100)
-mean_ci(x)
+mean_ci(x, conf = 0.9)
 #> [1] 0.498 0.610
 
 mean_ci(x, conf = 0.99) # can change default value
@@ -211,9 +211,11 @@ df <- tibble(
 
 # Write for loop to calculate median of each column in df
 output <- vector("double", ncol(df))  # 1. output
+
 for (i in seq_along(df)) {            # 2. sequence
         output[[i]] <- median(df[[i]])      # 3. body
 }
+
 output
 ## [[ ]] signifies working with single value, will also work with single square brackets
 
