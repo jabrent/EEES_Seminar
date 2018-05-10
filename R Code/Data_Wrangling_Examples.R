@@ -230,7 +230,6 @@ filter(df, is.na(x)|x > 1)
 #between x >= left & x <= right
 jan_june_flights <- filter(flights, between(month,1,6))
 
-
 #Arrange
 #changes order, breaks ties with additional columns and set can how decision made, missing values always sortedat end
 #use desc() to put in descending order with highest number first
