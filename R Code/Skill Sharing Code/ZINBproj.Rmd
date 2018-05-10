@@ -1,0 +1,636 @@
+---
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+# Zero-Inflated Models of Southern Pine Beetle Infestation
+
+## Univariate comparison of distributions
+
+First we use the univariate spots data to compare distributions among the Poisson, negative binomial, zero-inflated Poisson, and zero-inflated negative binomial. Note that this dataset includes centered and scaled covariates. NAs have been removed, including for "year minus 1" and "year minus 2". Three very large numbers for "spb" were also removed.
+```{r results='hide', message=FALSE, warning=FALSE}
+library(bbmle)
+library(pscl)
+library(MASS)
+
+load("spbStd.RData")
+```
+```{r}
+## without zero-inflation
+pois <- glm(spots ~ 1, data = spbStd, family = poisson)
+nb <- glm.nb(spots ~ 1, data = spbStd, control=glm.control(maxit=100))
+
+## with zero-inflation 
+zip <- zeroinfl(spots ~ 1 | 1, data = spbStd)
+zinb <- zeroinfl(spots ~ 1 | 1, data = spbStd, dist = "negbin")
+
+AICtab(pois, nb, zip, zinb, base=TRUE, logLik=TRUE)
+```
+```{r}
+
+# The ZIP figures looks odd because the model predicts extremely small values 
+predZIP <- predict(zip, type="prob")
+predZINB <- predict(zinb, type="prob")
+predZIP[1,1:6]
+predZINB[1,1:6]
+```
+### Testing methods to account for different host area sizes
+
+The zero-inflated negative binomial has the lowest AIC, so we will proceed using the ZINB model.
+Next we test whether to use the offset of log(area), or the standardized host area data as a
+regular covariate.
+```{r}
+# Null model
+m0 <- zeroinfl(spots ~ 1 | 1, data = spbStd, dist = "negbin")
+
+# Model to test space; offsets
+mA <- zeroinfl(spots ~ 1 + offset(log(host_1000ha)) | 1 + offset(log(host_1000ha)), data = spbStd, dist = "negbin")
+
+# Model to test space; host area (standardized)
+mB <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2, data = spbStd, dist = "negbin")
+
+AICtab(m0,mA, mB, base=TRUE)
+
+```
+### Testing each variable in turn: count model
+
+The standardized area as a covariate has the lowest AIC, so we will proceed using that variable.
+Next we add each variable in turn to the count model, leaving in only those variables that improve
+the AIC. The variables are SPB, SPB last year, clerids, clerids last year, percent SPB, percent SPB last year, spots last year, and spots two years ago. 
+
+```{r}
+# Null model
+m0 <- zeroinfl(spots ~ 1 | 1, data = spbStd, dist = "negbin")
+
+# SPB
+m1 <- zeroinfl(spots ~ 1 + host_1000ha2 + spb | 1 + host_1000ha2, 
+               data = spbStd, dist = "negbin")
+
+AICtab(m0,m1,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + clerids
+m2 <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + clerids | 1 + host_1000ha2, 
+               data = spbStd, dist = "negbin") 
+
+AICtab(m2,m1,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + pctSPB
+m3 <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + clerids + pctSPB
+                  | 1 + host_1000ha2, data = spbStd, dist = "negbin")
+
+AICtab(m3,m2,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + spb.t1
+m4 <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + clerids + pctSPB + spb.t1 | 1 + 
+                 host_1000ha2, data = spbStd, dist = "negbin")
+
+AICtab(m4,m3,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + clerids.t1
+m5 <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + clerids + pctSPB + spb.t1 + clerids.t1 | 
+                  1 + host_1000ha2, data = spbStd, dist = "negbin")
+
+AICtab(m5,m4,base=TRUE,logLik=TRUE)
+```
+```{r}
+# -clerids.t1 + pctSPB.t1
+m6 <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + clerids + pctSPB + spb.t1 
+                + pctSPB.t1 | 1 + host_1000ha2, data = spbStd, dist = "negbin")
+
+AICtab(m6,m4,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + spots.t1
+m7 <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + clerids + pctSPB + spb.t1 
+                + pctSPB.t1 + spots.t1 | 1 + host_1000ha2, data = spbStd, dist = "negbin")
+
+AICtab(m7,m6,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + spots.t2
+m8 <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + clerids + pctSPB + spb.t1 + 
+                  pctSPB.t1 + spots.t1 + spots.t2  | 1 + host_1000ha2, 
+                data = spbStd, dist = "negbin")
+
+AICtab(m8,m7,base=TRUE,logLik=TRUE)
+```
+
+```{r}
+# m8 is best model fit; rename to save
+bestCount <- m8
+```
+### Testing each variable in turn: binomial model
+
+Do the same for the binomial process, adding each variable in turn.
+```{r}
+# Null model
+m0 <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2, 
+               data = spbStd, dist = "negbin")
+```
+```{r}
+# SPB
+m10 <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2 + spb, data = spbStd, dist = "negbin")
+
+AICtab(m0,m10,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + clerids
+m11 <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2 + spb + clerids, data = spbStd, dist = "negbin")
+
+AICtab(m11,m10,base=TRUE,logLik=TRUE)
+```
+```{r}
+# -clerids + pctSPB
+m12 <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2 + spb + pctSPB, 
+               data = spbStd, dist = "negbin")
+
+AICtab(m12,m10,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + spb.t1
+m13 <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2 + spb + pctSPB 
+               + spb.t1, data = spbStd, dist = "negbin")
+
+AICtab(m13,m12,base=TRUE,logLik=TRUE)
+```
+```{r}
+# -spb.t1 + clerids.t1
+m14 <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2 + spb + pctSPB 
+                + clerids.t1, data = spbStd, dist = "negbin")
+
+AICtab(m14,m13,base=TRUE,logLik=TRUE)
+```
+```{r}
+# pctSPB.t1 
+m15 <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2 + spb + pctSPB 
+                + clerids.t1 + pctSPB.t1, data = spbStd, dist = "negbin")
+
+AICtab(m15,m14,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + spots.t1
+m16 <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2 + spb + pctSPB 
+                + clerids.t1 + pctSPB.t1 + spots.t1, data = spbStd, dist = "negbin")
+
+AICtab(m16,m15,base=TRUE,logLik=TRUE)
+```
+```{r}
+# + spots.t2
+m17 <- zeroinfl(spots ~ 1 + host_1000ha2 | 1 + host_1000ha2 + spb + pctSPB 
+                + clerids.t1 + pctSPB.t1 + spots.t1 + spots.t2, data = spbStd, dist = "negbin")
+
+AICtab(m17,m16, base=TRUE, logLik=TRUE)
+```
+```{r}
+bestBern <- m17
+```
+### Put the count and binomial fits together
+
+```{r}
+# combined best fits 
+bestFit <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + clerids + pctSPB + spb.t1 +
+                  pctSPB.t1 + spots.t1 + spots.t2 | 1 + host_1000ha2 + spb + pctSPB
+                 + clerids.t1 + pctSPB.t1 + spots.t1 + spots.t2,
+                data = spbStd, dist = "negbin")
+summary(bestFit)
+```
+### Test the removal of non-significant variables
+
+Here we also tested the removal of spots the year before and spots two years before, as spots.t-1 appeared to produce unreasonably large expected values. 
+```{r}
+# Remove non-significant variables
+bestReduced <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + pctSPB + spb.t1 +
+                  spots.t1 + spots.t2 | 1 + spb + pctSPB + spots.t1,
+                data = spbStd, dist = "negbin")
+
+# Remove spots as variables, with full and reduced models
+bestFitNospots <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + clerids + pctSPB + spb.t1 +
+                            pctSPB.t1 | 1 + host_1000ha2 + spb + pctSPB
+                          + clerids.t1 + pctSPB.t1,
+                          data = spbStd, dist = "negbin")
+bestRedNospots <- zeroinfl(spots ~ 1 + host_1000ha2 + spb + pctSPB + spb.t1
+                         | 1 + spb + pctSPB,
+                        data = spbStd, dist = "negbin")
+
+AICtab(bestFit,bestFitNospots,bestReduced,bestRedNospots,base=TRUE,logLik=TRUE)
+```
+### Test simplified models
+
+SPB + percent SPB; SPB + clerids; SPB only, including reduced models (models with non-significant variables removed) for some of them.
+```{r}
+# Billings model comparison
+mRon <- zeroinfl(spots ~ 1 + spb + pctSPB + spots.t1 + spots.t2 + host_1000ha2 | 
+                   1 + spb + pctSPB + spots.t1 + spots.t2 + host_1000ha2, 
+                 data = spbStd, dist = "negbin")
+```
+```{r}
+mRonReduced <- zeroinfl(spots ~ 1 + spb + pctSPB + spots.t1 + spots.t2 + host_1000ha2 | 
+                          1 + spb + pctSPB + spots.t1, 
+                        data = spbStd, dist = "negbin")
+```
+```{r}
+mClerids <- zeroinfl(spots ~ 1 + spb + clerids + spots.t1 + spots.t2 + host_1000ha2 | 
+                   1 + spb + clerids + spots.t1 + spots.t2 + host_1000ha2, 
+                 data = spbStd, dist = "negbin")
+```
+```{r}
+spbOnly <- zeroinfl(spots ~ 1 + spb + spots.t1 + spots.t2 + host_1000ha2 | 
+                      1 + spb + spots.t1 + spots.t2 + host_1000ha2, 
+                    data = spbStd, dist = "negbin")
+
+```
+```{r}
+spbOnlyRed <- zeroinfl(spots ~ 1 + spb + spots.t1 + host_1000ha2 | 
+                      1 + spb + spots.t1, 
+                    data = spbStd, dist = "negbin")
+```
+```{r}
+AICtab(bestFit,bestReduced,mRon,mRonReduced,mClerids,spbOnly,spbOnlyRed,base=TRUE)
+```
+Summary of Ron model, which was the second best fitting model. Summary of the best fit was shown above.
+```{r}
+summary(mRon)
+```
+### Comparison of expected number of zeros
+
+The package pscl has a number of ways to obtain expected values and probabilities based on your best-fitting model object. I was confused at first because I was unable to obtain expected values, given the model, that actually equaled zero. My goal was to obtain both the probability of zero (no infestations), as well as probabilities of ranges of my y value; e.g., "there is a 12% chance of there being between 20 and 30 infestations." How to do this wasn't obvious, at least not to me. Below is what I figured out, hopefully it's mostly correct.
+
+Recall that in the ZINB model, the probabilities of a zero (or not) in the binomial part of the model (generally referred to in the literature as a "false zero") are:
+$$Pr(0)=\pi_{i}$$
+$$Pr(1)=(1-\pi_{i})$$
+The expected mean and variance in a negative binomial GLM by itself (no zero-inflation) are:
+$$E(Y_{i}) = \mu_{i}$$
+$$var(Y_{i}) = \mu_{i}+\frac{\mu_{i}^2}{k}$$
+The zero-inflated NB model has the added complication of the binomial model process, so the expected mean and variance becomes:
+$$E(Y_{i}) = \mu_{i} \cdot (1-\pi_{i})$$
+$$var(Y_{i}) = \mu_{i} \cdot (1-\pi_{i}) \cdot (1+\mu_{i} \cdot (\pi_{i}+\frac{1}{k}))$$
+So the full probability of zero for the two-part model is:
+$$Pr(y_{i} = 0) = \pi_{i} + (1-\pi_{i}) \cdot  \left(\frac{k}{\mu_{i}+k}\right)^k$$
+with the probability of the count process being as follows (the NB function is noted in shorthand as it's quite long, and we don't really need it for this discussion).
+$$Pr(y_{i}>0)=(1-\pi_{i}) \cdot f_{NB}(y)$$
+In package pscl, there are different "types" of the predict command. The first three types produce the following values:
+```{r}
+pr <- predict(bestFit,type="zero")  
+# pi, aka Pr(falseZeros), aka the probability of zero in the binomial model
+
+mu <- predict(bestFit,type="count") # mu
+
+exp <- predict(bestFit, type="response") # expected values
+
+prob <- predict(bestFit, type="prob") # probability density
+```
+The "zero" and "mu" types produce a vector of length(yourData) with values pi and mu as in the above equations. The "response" type produces expected values corresponding to the ZINB expected value equation above. These expected values can also be obtained by the following two methods:
+```{r}
+exp2 <- mu*(1-pr) # see expected value equation above
+fit <- fitted(bestFit)
+```
+So the named objects "exp," "exp2," and "fit" above are identical. These are vectors of fitted/expected values, one for each row in the data. 
+
+The fourth type of predict function, "prob," produces a density table with as many rows as the original number of rows in your data (1774 in this case). So here my table is 4768 (the max value of y was 4767, 4768 includes zero) columns wide by 1774 rows. Example of the first five rows for the first five values:
+```{r}
+probDF <- as.data.frame(prob[1:5,1:5])
+probDF
+```
+The sum of probabilities across EACH ROW equals one, the sum of probabilities down EACH COLUMN (i.e., for each value between zero and ymax) produces the expected count for that value (Zuur, Hilbe), and the MEAN down EACH COLUMN produces the probability of that value. I found out about using the mean at this website (http://data.princeton.edu/wws509/r/overdispersion.html). Seems obvious in retrospect, but wasn't obvious at the time. 
+
+Note the distinction between "expected counts" and "expected values." The "expected values" are the model fits per row (i.e., for that combination of covariates), and can be obtained by any of the three methods above (example objects exp, exp2 and fit). If you want the probabilities per row for the model, you need to take rows from the probability data frame (I coerced it into a data frame here, but I think it's actually a list of lists.)
+
+Below we compare the expected number of zeros (only) from each model. (The index [,1] selects just the column for probability of zero.) 
+```{r}
+round(c("Obs" = sum(spbStd$spots < 1), 
+        "BestFull" = sum(predict(bestFit, type = "prob")[,1]),
+        # "BestFullNS" = sum(predict(bestFitNospots, type = "prob")[,1]),
+        "BestReduced" = sum(predict(bestReduced, type = "prob")[,1]),
+        # "BestReducedNS" = sum(predict(bestRedNospots, type = "prob")[,1]),
+        "SimpleFull" = sum(predict(mRon, type = "prob")[,1]),
+        # "SimpleFullNS" = sum(predict(mRonNospots, type = "prob")[,1]),
+        "SimpleReduced" = sum(predict(mRonReduced, type = "prob")[,1])
+        # "SimpleReducedNS" = sum(predict(mRonRedNS, type = "prob")[,1])
+))
+```
+So again, because we're summing the column, we're getting the "expected count" per value (in this case the value of zero, we'll get to the other counts below). Note that you can also hand code the probabilities, using the equation for ZINB Pr(0) above. 
+```{r}
+# Recall how we obtained pi and mu:
+pr <- predict(bestFit,type="zero")  # pi
+mu <- predict(bestFit,type="count") # mu
+# We extract k from the model object. (Note that some authors refer to "k" as "alpha."
+# In that case, alpha = 1/k.
+k <- bestFit$theta # extract theta from model fit
+
+prZero <- pr + (1-pr) * (k/(mu + k))^k
+```
+Here, prZero produces the same vector as predict(bestFit, type="prob")[,1], and again, it can be summed to produce the expected count of zeros, or you can take the mean to obtain the probability of zero. 
+```{r}
+mean(prZero)
+```
+So that's 57% zeros predicted by the model. prZero is just the vector of probabilities of zero, but you can also take the means of the entire dataframe prob (created from predict(bestFit, type="prob") to get the mean probabilities of the other counts. (See "Probability densities of counts," below.) 
+
+### Comparison of expected numbers for all values
+
+Next we want to see how the expected values for all the other counts compare. So this time we run the predict function for all values, not just [,1]. Note that if you do function table on the observed values, it will only give you the number of rows that are the number of unique values in the original data. In this case, there were only 295 unique values in the dataset between 0 and 4767. I added the "levels" specification to force the table to include the values for which there were zero occurrences. 
+
+```{r}
+best <- round(colSums(predict(bestFit, type="prob"))) # expected counts
+obs <- table(factor(spbStd$spots, levels = 0:4767))  # observed counts
+bestRed <- round(colSums(predict(bestReduced, type="prob"))) # expected counts
+simple <- round(colSums(predict(mRon, type="prob"))) # expected counts
+write.csv(simple,file="probsRon.csv")
+simpleRed <- round(colSums(predict(mRonReduced, type="prob"))) # expected counts
+
+table <- rbind(obs,best,bestRed,simple,simpleRed)
+```
+4768 columns is too many, so here I selected just 0-10, and a selection of the higher numbers for the output table.  
+```{r}
+finalTab <- table[,c(1:11,21,31,41,51,101,201)]
+finalTab
+write.csv(finalTab,file="probTable.csv")
+```
+### Probability densities of counts
+
+Next I used the predicted probabilities of the two best-fitting models (full model and Ron model) to calculate probabilities of ranges of spot numbers. I did this in excel, so no output is shown here. Using the expected counts calculated above, I summed the probabilities across ranges of values, so that I could say there was, for example, a 12% chance of having between 1 and 10 spots.There are a handful of rows (a small number out of 1774) in the final spreadsheet whose probabilities don't sum to one, but I haven't figured out why that is yet.
+
+### Residual plots
+
+Code for plots of fitted values vs. Pearson residuals, fitted vs. observed values, and square root of fitted vs. observed values. I know from data examination that the two extreme fitted values appear to be caused by the two highest values for "spots the year before." Output not shown.
+```{r eval=FALSE}
+resBest <- residuals(bestFit); fittedBest <- fitted(bestFit)
+resRed <- residuals(bestReduced); fittedRed <- fitted(bestReduced)
+resRon <- residuals(mRon); fittedRon <- fitted(mRon)
+resRonRed <- residuals(mRonReduced); fittedRonRed <- fitted(mRonReduced)
+
+## FULL MODEL ##
+par(mfrow=c(1,3), mar=c(5, 4, 2, 2) + 0.1,
+  oma=c(1.5,1.5,1.5,1.5)) # Adjusted margins to fit a single title over three panels
+#Plot fitted values versus residuals
+plot(x = fittedBest,
+     y = resBest,
+     xlab = "Fitted values",
+     ylab = "Pearson Residuals") 
+#     xlim=c(0,150))
+abline(h = 0, lty = 2)
+
+#Plot fitted values versus observed
+plot(x = fittedBest,
+     y = spbStd$spots,
+     xlab = "Fitted values",
+     ylab = "Observed values") 
+abline(h = 0, lty = 2)
+
+#Plot squareroot fitted values versus observed
+plot(x = fittedBest^.5,
+     y = spbStd$spots^.5,
+     xlab = "Square root of fitted values",
+     ylab = "Square root of observed values") 
+abline(h = 0, lty = 2)
+
+mtext("Full Best Fit Model",outer=TRUE, line=0)
+
+## REDUCED MODEL ##
+#Plot fitted values versus residuals
+plot(x = fittedRed,
+     y = resRed,
+     xlab = "Fitted values",
+     ylab = "Pearson Residuals") 
+#     xlim=c(0,150))
+abline(h = 0, lty = 2)
+
+#Plot fitted values versus observed
+plot(x = fittedRed,
+     y = spbStd$spots,
+     xlab = "Fitted values",
+     ylab = "Observed values") 
+abline(h = 0, lty = 2)
+
+#Plot squareroot fitted values versus observed
+plot(x = fittedRed^.5,
+     y = spbStd$spots^.5,
+     xlab = "Square root of fitted values",
+     ylab = "Square root of observed values") 
+abline(h = 0, lty = 2)
+
+mtext("Reduced Best Fit Model",outer=TRUE, line=0)
+
+## RON MODEL##
+#Plot fitted values versus residuals
+plot(x = fittedRon,
+     y = resRon,
+     xlab = "Fitted values",
+     ylab = "Pearson Residuals") 
+#     xlim=c(0,150))
+abline(h = 0, lty = 2)
+
+#Plot fitted values versus observed
+plot(x = fittedRon,
+     y = spbStd$spots,
+     xlab = "Fitted values",
+     ylab = "Observed values") 
+abline(h = 0, lty = 2)
+
+#Plot squareroot fitted values versus observed
+plot(x = fittedRon^.5,
+     y = spbStd$spots^.5,
+     xlab = "Square root of fitted values",
+     ylab = "Square root of observed values") 
+abline(h = 0, lty = 2)
+mtext("SPB + %SPB Model",outer=TRUE, line=0)
+
+## RON MODEL REDUCED ##
+#Plot fitted values versus residuals
+plot(x = fittedRonRed,
+     y = resRonRed,
+     xlab = "Fitted values",
+     ylab = "Pearson Residuals") 
+#     xlim=c(0,150))
+abline(h = 0, lty = 2)
+
+#Plot fitted values versus observed
+plot(x = fittedRonRed,
+     y = spbStd$spots,
+     xlab = "Fitted values",
+     ylab = "Observed values") 
+abline(h = 0, lty = 2)
+
+#Plot squareroot fitted values versus observed
+plot(x = fittedRonRed^.5,
+     y = spbStd$spots^.5,
+     xlab = "Square root of fitted values",
+     ylab = "Square root of observed values") 
+abline(h = 0, lty = 2)
+mtext("Reduced SPB + %SPB Model",outer=TRUE, line=0)
+```
+## Sensitivity Analysis
+
+```{r}
+# identify percentiles for STANDARDIZED variables
+quants <- round(rbind(quantile(spbStd$spb, c(.10,.25,.4,.5,.75, .90,1)),
+                      quantile(spbStd$spb.t1, c(.10,.25,.4,.5,.75, .90,1)),
+                      quantile(spbStd$clerids, c(.10,.25,.4,.5,.75, .90,1)),
+                      quantile(spbStd$clerids.t1, c(.10,.25,.4,.5,.75, .90,1)),
+                      quantile(spbStd$pctSPB, c(.10,.25,.4,.5,.75, .90,1)), 
+                      quantile(spbStd$pctSPB.t1, c(.10,.25,.4,.5,.75, .90,1)),
+                      quantile(spbStd$host_1000ha2, c(.10,.25,.4,.5,.75, .90,1)), 
+                      quantile(spbStd$spots.t1, c(.10,.25,.4,.5,.75, .90,1)),
+                      quantile(spbStd$spots.t2, c(.10,.25,.4,.5,.75, .90,1))),2)
+names <- c("SPB", "SPB.t-1", "Clerids", "Clerids.t-1", "pctSPB", "pctSPB.t-1", "host area_1000ha", "Spots.t-1", "Spots.t-2")
+cbind(names, quants)
+means <- round(c(mean(spbStd$spb), mean(spbStd$spb.t1), mean(spbStd$clerids), mean(spbStd$clerids.t1),
+                 mean(spbStd$pctSPB), mean(spbStd$pctSPB.t1),mean(spbStd$host_1000ha2),
+                 mean(spbStd$spots.t1),mean(spbStd$spots.t2)),2)
+
+percentilesStd <- as.data.frame(cbind(names, means, quants))# identify percentiles for variables
+percentilesStd
+```
+```{r}
+# NOTE: The sensitivity analysis for hi vs. lo spb comes out differently than before (original
+# draft had loSPB causing hi probability of zero). As best I can tell, this is because I was 
+# misinterpreting the output and had a funky way of coming up with the probs. So figure 2
+# in the original draft is completely wrong. I re-did it using the non-scaled best fit model
+# and the non-scaled covars (which at the time included the offset instead of the area as covar).
+# It came out basically the same as using the scaled vars. And I can't for the life of me 
+# reproduce the original incorrect analysis.
+
+# Create one line "newdata" for each high and low condition.
+lowSPB <- data.frame(spb = -.45, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = 0, 
+                     pctSPB.t1 = 0, host_1000ha2 = 0, spots.t1 = 0, spots.t2 = 0)
+hiSPB <- data.frame(spb = .85, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = 0, 
+                    pctSPB.t1 = 0, host_1000ha2 = 0, spots.t1 = 0, spots.t2 = 0)
+
+lowPct <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = -.95, 
+                     pctSPB.t1 = 0, host_1000ha2 = 0, spots.t1 = 0, spots.t2 = 0)
+hiPct <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = 1.6, 
+                    pctSPB.t1 = 0, host_1000ha2 = 0, spots.t1 = 0, spots.t2 = 0)
+
+loCleridsPrev <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=-.7, 
+                            pctSPB = 0, pctSPB.t1 = 0, host_1000ha2 = 0, 
+                            spots.t1 = 0, spots.t2 = 0)
+hiCleridsPrev <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=1.15, 
+                            pctSPB = 0, pctSPB.t1 = 0, host_1000ha2 = 0, 
+                            spots.t1 = 0, spots.t2 = 0)
+
+loPctPrev <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = 0, 
+                        pctSPB.t1 = -1.02, host_1000ha2 = 0, spots.t1 = 0, spots.t2 = 0)
+hiPctPrev <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = 0, 
+                        pctSPB.t1 = 1.56, host_1000ha2 = 0, spots.t1 = 0, spots.t2 = 0)
+
+loSpotsPrev <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = 0, 
+                          pctSPB.t1 = 0, host_1000ha2 = 0, spots.t1 = -.26, spots.t2 = 0)
+hiSpotsPrev <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = 0, 
+                          pctSPB.t1 = 0, host_1000ha2 = 0, spots.t1 = .23, spots.t2 = 0)
+
+loArea <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = 0, 
+                     pctSPB.t1 = 0, host_1000ha2 = -1, spots.t1 = 0, spots.t2 = 0)
+hiArea <- data.frame(spb = 0, spb.t1 = 0, clerids = 0, clerids.t1=0, pctSPB = 0, 
+                     pctSPB.t1 = 0, host_1000ha2 = 1.58, spots.t1 = 0, spots.t2 = 0)
+```
+
+```{r}
+# When using predict from the whole dataset, summing the columns produces the 
+# expected count for each value, 0 - 4767. Taking the mean of each column produces the 
+# probability of that count. Here we have just one row in the new data. So we use
+# just the probabilities instead of the counts.
+loSPBExp <- round(predict(bestFit, newdata=lowSPB, type="prob"),4) 
+hiSPBExp <- round(predict(bestFit, newdata=hiSPB, type="prob"),4)
+
+loPctExp <- round(predict(bestFit, newdata=lowPct, type="prob"),4) 
+hiPctExp <- round(predict(bestFit, newdata=hiPct, type="prob"),4)
+
+loCleridsPrevExp <- round(predict(bestFit, newdata=loCleridsPrev, type="prob"),4) 
+hiCleridsPrevExp <- round(predict(bestFit, newdata=hiCleridsPrev, type="prob"),4)
+
+loPctPrevExp <- round(predict(bestFit, newdata=loPctPrev, type="prob"),4) 
+hiPctPrevExp <- round(predict(bestFit, newdata=hiPctPrev, type="prob"),4) 
+
+loSpotsPrevExp <- round(predict(bestFit, newdata=loSpotsPrev, type="prob"),4) 
+hiSpotsPrevExp <- round(predict(bestFit, newdata=hiSpotsPrev, type="prob"),4)
+
+loAreaExp <- round(predict(bestFit, newdata=loArea, type="prob"),4) 
+hiAreaExp <- round(predict(bestFit, newdata=hiArea, type="prob"),4) 
+
+obs <- table(factor(spbStd$spots, levels = 0:4767))  # observed counts
+obs2 <- obs/1774 # observed probability
+
+
+ObsExpTable <- round(rbind(obs2,loSPBExp,hiSPBExp,loPctExp,hiPctExp,loCleridsPrevExp,
+            hiCleridsPrevExp, loPctPrevExp, hiPctPrevExp, loSpotsPrevExp, hiSpotsPrevExp, 
+            loAreaExp,hiAreaExp),4)
+rownames(ObsExpTable) <- c("Observed","Low SPB","High SPB","Low PctSPB","High PctSPB",
+										 "Low Clerids Last Year", "High Clerids Last Year", 
+                     "Low PctSPB Last Year", "High PctSPB Last Year",
+										 "Low Spots Last Year","High Spots Last Year", "Low Host Area", "High Host Area")
+finalTab <- ObsExpTable[,1:1001] # Full table up to count of 1000
+finalTab[,1:11] # Show first 11 columns
+write.csv(finalTab,file="finalTab2.csv")
+# NOTE: I made the sensitivity plots in excel, not shown here.
+
+```
+## Sensitivity Analysis, simpler model
+
+Repeat all of the above for the "Ron Model."
+```{r}
+# Repeat for Ron Model (remove vars not in model)
+loSPBExp <- round(predict(mRon, newdata=lowSPB, type="prob"),4) 
+hiSPBExp <- round(predict(mRon, newdata=hiSPB, type="prob"),4)
+
+loPctExp <- round(predict(mRon, newdata=lowPct, type="prob"),4) 
+hiPctExp <- round(predict(mRon, newdata=hiPct, type="prob"),4)
+
+loSpotsPrevExp <- round(predict(mRon, newdata=loSpotsPrev, type="prob"),4) 
+hiSpotsPrevExp <- round(predict(mRon, newdata=hiSpotsPrev, type="prob"),4)
+
+loAreaExp <- round(predict(mRon, newdata=loArea, type="prob"),4) 
+hiAreaExp <- round(predict(mRon, newdata=hiArea, type="prob"),4) 
+
+obs <- table(factor(spbStd$spots, levels = 0:4767))  # observed counts
+obs2 <- obs/1774 # observed probability
+
+ObsExpTable <- round(rbind(obs2,loSPBExp,hiSPBExp,loPctExp,hiPctExp,loSpotsPrevExp, 
+                           hiSpotsPrevExp,loAreaExp,hiAreaExp),4)
+rownames(ObsExpTable) <- c("Observed","Low SPB","High SPB","Low PctSPB","High PctSPB",
+                         "Low Spots Last Year","High Spots Last Year", "Low Host Area", "High Host Area")
+finalTab2 <- ObsExpTable[,1:1001] # Full table up to count of 1000
+finalTab2[,1:11] # Show first 11 columns
+write.csv(finalTab2,file="finalTab2.csv")
+
+# Go to summFinalTab.xlsx for figures and groups-of-ten/fifty summaries
+# for both models
+```
+
+```{r}
+## Correlation matrix of covariates
+
+covarsStd <- spbStd[,c(7:15,20)]
+
+varCors <- round(cor(covarsStd),2)
+# upper.tri(varCors) # creates true/false matrix of same size as correlation matrix
+# Remove upper triangle of cor matrix
+upper <- varCors
+upper[upper.tri(varCors)] <- ""
+upper <- as.data.frame(upper)
+upper
+
+write.csv(as.data.frame(upper),file="corMatrix.csv")
+```
+## Comparing observed vs. predicted outbreak/non-outbreak
+
+To compare how the models predict whether there's an outbreak or not (for each forest-year),
+I took the expected values (see above) and divided them by (host area in acres/1000). Any value
+<1 was considered non-outbreak, and any value >=1 was considered outbreak. These were then 
+compared to observed values. Calculations performed in Excel so not displayed here. Note that calculating from density instead of counts means that there are more "non-outbreak" years, since "zero" actually 
+includes everything < 1. 
+
+
+
+
+
+
+
+
+
+
+
+
