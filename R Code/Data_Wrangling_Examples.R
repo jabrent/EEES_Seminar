@@ -650,3 +650,7 @@ flights %>%
 # Factors - forcats package ####
 
 library(forcats)
+
+# Make a list of different levels
+
+month_levels <- c("Jan", "Feb", "Mar")
