@@ -646,3 +646,5 @@ flights %>%
 # intersect = return only observations in both x & y
 # union = return unique observations in x & y
 # setdiff = return observations in x but not in y
+
+# Factors - forcats package ####
