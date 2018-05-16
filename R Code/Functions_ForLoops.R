@@ -41,7 +41,7 @@ df <- tibble::tibble(
         d = rnorm(10)
 )
 
-#
+#Rescales data between 0 and 1
 df$a <- (df$a - min(df$a, na.rm = TRUE)) /
         (max(df$a, na.rm = TRUE) - min(df$a, na.rm = TRUE))
 
@@ -64,6 +64,7 @@ rescale01 <- function(x) {
         (x - rng[1]) / (rng[2] - rng[1])
 } # functions always start and end with curly braces
 
+
 ---- #Used for line breaks need minimum of 4
 # Test
 rescale01(c(0, 5, 10)) #in this case x = c(0, 5, 10)
@@ -76,12 +77,16 @@ mean_ci <- function(x, conf = 0.95) { # x = data, conf = detail, most common val
         mean(x) + se * qnorm(c(alpha / 2, 1 - alpha / 2))
 }
 
+<<<<<<< HEAD
+x <- runif(100)##randomly selects 100 numbers between 0 and 100
+mean_ci(x)
+=======
 x <- runif(100)
 mean_ci(x, conf = 0.9)
 #> [1] 0.498 0.610
+>>>>>>> ee83819c7577fbb14cf2fe57ff4300481d2e1e47
 
 mean_ci(x, conf = 0.99) # can change default value
-#> [1] 0.480 0.628
 
 # Debug code - R recycles vectors so need to explicit check if vectors not the same leght and through error message
 
@@ -160,6 +165,7 @@ if (condition) {
 
 x <- c("apple", "banana", "blueberry")
 
+#function is looking for column names
 has_name <- function(x) {
         nms <- names(x)
         if (is.null(nms)) {

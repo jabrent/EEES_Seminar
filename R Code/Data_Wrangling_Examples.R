@@ -292,7 +292,7 @@ delay <- summarise(by_dest,
 )
 
 delay <- filter(delay, count > 20, dest != "HNL") #filter out airports with destinations < 20 and exclude Honolulu
-
+length(dest)
 #With pipe = %>% translates to "then"
 delays <- flights %>% 
         group_by(dest) %>% 
