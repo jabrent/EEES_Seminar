@@ -49,6 +49,22 @@ s +
 geom_point(aes(shape = z), size = 4, colour = "Red", fill = "Black") +
         scale_shape_identity()
 
+#Options for colors - Rcolor Brewer and viridis package
+library(RColorBrewer) #color brewer package
+display.brewer.all()
+display.brewer.pal(n = 8, name = 'Dark2')
+
+install.packages("viridis")
+library(viridis)
+
+ggplot(data.frame(x = rnorm(10000), y = rnorm(10000)), aes(x = x, y = y)) +
+        geom_hex() + coord_fixed() +
+        scale_fill_viridis() + theme_bw()
+
+#color blind friendly options
+library(dichromat)
+
+
 # Test dataset - mpg = US EPA data on 38 models of cars ####
 View(mpg) #displ = car's engine size, hwy = car's fuel efficiency mpg
 str(mpg)
@@ -467,7 +483,7 @@ pairs(countries_2009[,2:5],
       diag.panel = panel.hist,
       lower.panel = panel.lm)
 
-# Coordinate systems & Spatial Data ####
+# Coordinate systems ####
 # Default coordinate system is Cartesian coordinates
 coord_flip() #useful for horizontal boxplots or long labels
 
@@ -477,31 +493,8 @@ ggplot(data = mpg, mapping = aes(x = class, y = hwy)) +
 
 coord_quickmap() #correct aspect ratio for maps
 
-#using maps package
-nz <- map_data("nz")
-world <- map_data("world")
-
-ggplot(nz, aes(long, lat, group = group)) +
-        geom_polygon(fill = "white", color = "black")
-
-ggplot(nz, aes(long, lat, group = group)) +
-        geom_polygon(fill = "white", color = "black") + 
-        coord_quickmap()
-
-ggplot(world, aes(long, lat, group = group)) +
-        geom_polygon(fill = "white", color = "black") + 
-        coord_quickmap()
-
 # Polar coordinates
 coord_polar()
-
-
-# Chernoff faces ####
-install.packages("aplpack")
-library(aplpack)
-
-faces(x=as.matrix(cdata[ilifew,c(8,7,9,6,4,2,3)]),
-      labels=as.character(cdata$name[ilifew]))
 
 
 # Themes and Clean Plots ####
@@ -518,21 +511,416 @@ theme_bw(base_family = "Times")+
               panel.grid.major = element_blank(),
               panel.grid.minor = element_blank())
 
+
+# Try plotly for interactive plots ####
+# Need a free acount to post plots but can use on own computer for free, works with Python and Matlab too
+# More info: https://plot.ly/r/getting-started/
+
+# Install package and load library
+install.packages("plotly")
+library(plotly) #Yes if needs compilation question comes up
+
+# Development version
+devtools::install_github("ropensci/plotly")
+
+#use dev version of ggplot2 with ggplotly()
+devtools::install_github('hadley/ggplot2')
+library(ggplot2)
+
+#Link plotly account through API
+# set plotly user name
+Sys.setenv("plotly_username"="YOUR_plotly_username")
+# set plotly API key
+Sys.setenv("plotly_api_key"="YOUR_api_key")
+
+#Basic functions
+plot_ly
+ggplotly
+
+#Example with ggplot
+diamond_freqpoly <-  ggplot(data = diamonds, mapping = aes(x = carat, colour = cut)) +
+        geom_freqpoly(binwidth = 0.1)
+
+ggplotly(diamond_freqpoly)
+
+#Base plot
+str(midwest) #demographic info of midwest counties
+p <- plot_ly(midwest, x = ~percollege, color = ~state, type = "box")
+p
+
+#double click to isolate one state
+
+# publish plotly plot to your plotly online account
+py
+api_create(p, filename = "r-docs-midwest-boxplots")
+
+# Factors - forcats package ####
+install.packages("forcats")
+library(forcats) #also installs as part of tidyverse
+
+# Make a list of different levels for the order you want that factors to be in
+months <- c("Jan", "Feb", "Mar", "Dec")
+str(months) #Defaults to character
+
+month_levels <- c("Dec", "Jan", "Feb", "Mar") #any levels not included from original dataset will be converted to NA
+
+#Function factor very useful
+months_factor <- factor(months, month_levels) #list of months, levels that you want the factor ordered in
+str(months_factor)
+
+#Omit levels - uses alphabetical order
+factor(months)
+
+#Can set factor levels to first appearance in data
+f1 <- factor(months, levels = unique(months))
+f1
+
+#or with fct_inorder
+f2 <- months %>% 
+        factor() %>% 
+        fct_inorder()
+
+#Levels allows you to see the set of levels directly
+levels(f2)
+
+#examples with General Social Survey (GSS) dataset that has a lot categorical variables
+gss_cat #name of dataset
+str(gss_cat)
+
+#See order of factors levels with count function
+gss_cat %>% 
+        count(race)
+
+#or with a bar fig
+
+ggplot(gss_cat,aes(race)) +
+        geom_bar()+
+        scale_x_discrete(drop = FALSE) #by default ggplot will drop factor levels with NA but to make them plot you can set the scale x discrete function drop = F
+
+#Changing the order of factor levels
+
+#Wrangle the data to make a summary with the avg number of hours spent watching TV per day across religions
+relig_tv <- gss_cat %>% 
+        group_by(relig) %>% 
+        summarize(
+                age = mean(age, na.rm = TRUE),
+                tvhours = mean(tvhours, na.rm = T),
+                n = n()) #count of number of survey respondents in each religion group
+
+ggplot(relig_tv, aes(tvhours, relig))+
+        geom_point() + 
+        theme_classic()
+
+#use fct_reorder to reorder factors levels by increasing number of TV hours
+#3 arguments: 
+#1. f = factor with levels want to modify
+#2. x = numeric vector to reorder levels
+#3. fun = optional function used if multiple values of x for each value of f - default is set to median but could change to mean, max, min, etc. desc set to FALSE but change to TRUE if want in descending order
+fct_reorder(f, x, fun = "median", desc = FALSE) #default
+
+#Include in ggplot call
+ggplot(relig_tv, aes(tvhours, fct_reorder(relig,tvhours)))+
+        geom_point() + 
+        theme_classic()
+
+#Can also include in separate call outside of ggplot
+relig_tv %>% 
+        mutate(relig = fct_reorder(relig,tvhours)) %>% 
+        ggplot(aes(tvhours, relig))+
+        geom_point() + 
+        theme_classic()
+
+#If you want to keep the factor order but just move certain factors to bottom, use fct_relevel
+
+fct_relevel(f, "level", after = Inf) # f = factor, level = name of level you want to move or multiple ones with concatenate (c) and after lets you set the position with a number (i.e. 2 or 3) or Inf moves the level to the end
+
+ggplot(relig_tv, aes(tvhours, fct_relevel(relig,c("Other", "No answer", "None"), after = 1)))+
+        geom_point() + 
+        theme_classic()
+
+#fct_relevel2 - reorders the factors by the y values associated with the largest x values, can make plots easier to read because the colors line up with the legend
+# Example with gapminder dataset - Jenny Bryan
+library(gapminder)
+
+h_countries <- c("Egypt", "Haiti", "Romania", "Thailand", "Venezuela")
+h_gap <- gapminder %>%
+        filter(country %in% h_countries) %>% 
+        droplevels()
+ggplot(h_gap, aes(x = year, y = lifeExp, color = country)) +
+        geom_line() #legend defaults to ordering factor levels alphabetically
+
+#Legend in same order as data - use fct_reorder2
+ggplot(h_gap, aes(x = year, y = lifeExp,
+                  color = fct_reorder2(country, year, lifeExp))) + #uses last x value to sort by
+        geom_line() +
+        labs(color = "country") #sets legend for color to country
+
+#Bar plots
+fct_infreq #will order levels in increasing frequency
+fct_rev # will reverse order of factor levels
+
+gss_cat %>%
+        mutate(marital = marital %>%
+                       fct_infreq()) %>%
+        ggplot(aes(marital)) +
+        geom_bar()
+
+#Reverse factor order
+gss_cat %>%
+        mutate(marital = marital %>%
+                       fct_infreq() %>%
+                       fct_rev()) %>% 
+        ggplot(aes(marital)) +
+        geom_bar()
+
+# Modify factor levels ###
+#clarify levels for tidier figures or publications
+
+fct_recode("New_name" = "Old_name",etc) #leaves levels not included in call as is
+
+gss_cat %>% count(partyid) #bad names for factor levels
+
+gss_cat %>%
+        mutate(partyid = fct_recode(partyid,
+               "Republican, strong"    = "Strong republican",
+                "Republican, weak"      = "Not str republican",
+                "Independent, near rep" = "Ind,near rep",
+                "Independent, near dem" = "Ind,near dem",
+                "Democrat, weak"        = "Not str democrat",
+                "Democrat, strong"      = "Strong democrat"
+        )) %>%
+        count(partyid)
+
+#Can also assign multiple factors to one level if you want to group them together
+gss_cat %>%
+        mutate(partyid = fct_recode(partyid,
+         "Republican, strong"    = "Strong republican",
+         "Republican, weak"      = "Not str republican",
+         "Independent, near rep" = "Ind,near rep",
+         "Independent, near dem" = "Ind,near dem",
+         "Democrat, weak"        = "Not str democrat",
+         "Democrat, strong"      = "Strong democrat",
+          "Other"                = "No answer",
+          "Other"                = "Don't know",
+          "Other"               = "Other party"
+        )) %>%
+        count(partyid)
+
+#To collapse a lot of factor level use fct_collapse - for each new variable, you can provide a vector of old levels
+
+gss_cat %>%
+        mutate(partyid = fct_collapse(partyid,
+               other = c("No answer", "Don't know", "Other party"),
+               rep = c("Strong republican", "Not str republican"),
+               ind = c("Ind,near rep", "Independent", "Ind,near dem"),
+               dem = c("Not str democrat", "Strong democrat"))) %>%
+        count(partyid)
+
+#To lump factor levels together - use fct_lump. Defaults to aggregating the smallest groups together and leaving the one large group but can change by setting n to be number of groups
+
+gss_cat %>%
+        mutate(relig = fct_lump(relig)) %>%
+        count(relig)
+
+#Lump into 10 levels
+gss_cat %>%
+        mutate(relig = fct_lump(relig, n = 5)) %>%
+        count(relig, sort = TRUE)
+
+
+# Jenny Bryan - gap minder example ####
+library(gapminder)
+
+str(gapminder)
+
+str(gapminder$continent)
+levels(gapminder$continent)
+nlevels(gapminder$continent)
+class(gapminder$continent)
+
+#count for factors
+fct_count(mpg$model)
+
+#Convert variables to factors
+gapminder <- gapminder %>%
+        mutate(country = factor(country),
+               continent = factor(continent))
+
+#Drop unused factor levels
+nlevels(gapminder$country)
+
+h_countries <- c("Egypt", "Haiti", "Romania", "Thailand", "Venezuela")
+h_gap <- gapminder %>%
+        filter(country %in% h_countries)
+
+nlevels(h_gap$country) # still at 142!
+
+#use fct_drop
+h_gap$country %>%
+        fct_drop() %>%
+        levels()
+
+#order factor levels by frequency
+gapminder$continent %>% 
+        fct_infreq() %>%
+        levels()
+
+## backwards!
+gapminder$continent %>% 
+        fct_infreq() %>%
+        fct_rev() %>% 
+        levels()
+
+#reorder factor levels by median or any function
+fct_reorder(gapminder$country, gapminder$lifeExp, min) %>% #reorder the country by the minimum life expectancy
+        levels() %>% head()
+
+## backwards!
+fct_reorder(gapminder$country, gapminder$lifeExp, .desc = TRUE) %>% 
+        levels() %>% head()
+
+# Combine factor levels 
+df1 <- gapminder %>%
+        filter(country %in% c("United States", "Mexico"), year > 2000) %>%
+        droplevels()
+df2 <- gapminder %>%
+        filter(country %in% c("France", "Germany"), year > 2000) %>%
+        droplevels()
+
+levels(df1$country)
+levels(df2$country)
+
+#Can't just concatenate
+c(df1$country, df2$country) #Don't do!
+
+#Instead use fct_c
+fct_c(df1$country, df2$country)
+
+#Row binding with factors - will turn back to characters so be careful!
+df3 <- bind_rows(df1, df2)
+str(df3)
+df4 <- rbind(df1,df2) #keeps factors
+str(df4)
+
+gap_life_exp <- gapminder %>%
+        group_by(country, continent) %>% #only keeps variables named in group
+        summarise(life_exp = max(lifeExp)) %>% 
+        ungroup() #removes grouping
+
+gap_life_exp
+
+
+# Heat maps ####
+# example from Visualize This - Nathan Yau
+heatmap() #function in Base R
+
+bball <- read_csv("http://datasets.flowingdata.com/ppg2008.csv") 
+
+bball$Name <-  factor(bball$Name, levels = unique(bball$Name))
+str(bball)
+
+bball <- bball %>% 
+        arrange(PTS)
+#replace row names with bball names - deprecated with tibbles now but needed for heatmap function
+bball <- column_to_rownames(bball, var = "Name")
+
+#Convert data to matrix
+bball_matrix <- data.matrix(bball)
+
+library(RColorBrewer)
+bball_heatmap <- heatmap(bball_matrix, Rowv = NA, Colv = NA, #Rowv/Colv = dendrogram turn off
+                         col = brewer.pal(9, "Blues"),scale = "column", margins = c(5,10))  
+
+#scales = column tells R to use the min & max of each column to determine color gradients instead of min and max of entire matrix
+
+
+# Spatial data - maps ####
+#using maps package
+nz <- map_data("nz")
+world <- map_data("world")
+
+ggplot(nz, aes(long, lat, group = group)) +
+        geom_polygon(fill = "white", color = "black")
+
+ggplot(nz, aes(long, lat, group = group)) +
+        geom_polygon(fill = "white", color = "black") + 
+        coord_quickmap()
+
+ggplot(world, aes(long, lat, group = group)) +
+        geom_polygon(fill = "white", color = "black") + 
+        coord_quickmap()
+
+# Example of more advanced mapping with Visualize This - Yau ####
+library(maps)
+
+# read in costco data of store locations around the US
+costcos <- read.csv("http://book.flowingdata.com/ch08/geocode/costcos-geocoded.csv", sep = ",")
+
+map(database = "state") #1st layer
+symbols(costcos$Longitude, costcos$Latitude, circles = rep(1, length(costcos$Longitude)), inches = 0.05, add = TRUE) #adds 2nd layer but makes sure to put map down first
+# all circles same size
+
+# Clean up - Hawaii & AK use world map instead of state
+map(database = "state", col = "#cccccc") #hexadecimal colors = light gray
+symbols(costcos$Longitude, costcos$Latitude, bg = "#e2373f", fg = "white", lwd = 0.5, circles = rep(1, length(costcos$Longitude)), inches = 0.05, add = TRUE) 
+
+# More info on hexadecimal color specification in R if curious: http://stat545.com/block018_colors.html
+
+# Map for specific regions - may have to clear previous plots or use dev.off
+map(database = "state", region = c("California", "Nevada", "Oregon", "Washington"), col = "#cccccc") #hexadecimal colors = light gray
+symbols(costcos$Longitude, costcos$Latitude, bg = "#e2373f", fg = "white", lwd = 0.5, circles = rep(1, length(costcos$Longitude)), inches = 0.05, add = TRUE) 
+
+#Bubble map - area of bubbles related to additional variable
+#adolescent fertility rate worldwide
+
+fertility <- read.csv("http://book.flowingdata.com/ch08/points/adol-fertility.csv")
+
+map("world", fill = FALSE, col = "#cccccc")
+symbols(fertility$longitude, fertility$latitude, circles = sqrt(fertility$ad_fert_rate), bg = "#93ceef", fg = "white", inches = 0.15, add = TRUE) 
+
+#Square root of fertility rates mapped to area of circles
+
+#Summary for legend
+summary(fertility$ad_fert_rate)
+
+
 # Export plots ####
+#vector vs. raster
+#Vector: PDF, SVG (scalable vector graphics)
+#Raster: jpeg, png - don't scale well - look grainy when blown up
+
+#Base R - read device
+pdf("Name_of_figure.pdf") #tiff(), png()
+plot(1:10)
+dev.off #remove any formatting in plot window if packages have different defaults for plot window sizes
+
+# ggplot - use ggsave
 ggsave("Name of plot.file type", width=11, height=8.5) #width and height are in inches but can change
 
 #will save most recent plot or can call specific one
 #Can support pdf, jpeg, eps, tiff, png 
 
-#Base R
-pdf("Name_of_figure.pdf") #tiff(), png()
-plot(1:10)
-dev.off #remove any formatting in plot window if packages have different defaults for plot window sizes
+#scale - posters & slides: scale = 0.8
 
-#Grid Extra example
+#Examples with scale
+library(gapminder)
+p <- ggplot(gapminder, aes(x = year, y = lifeExp)) + geom_jitter()
+p1 <- p + ggtitle("scale = 0.6")
+p2 <- p + ggtitle("scale = 2")
+p3 <- p + ggtitle("base_size = 20") + theme_grey(base_size = 20)
+p4 <- p + ggtitle("base_size = 3") + theme_grey(base_size = 3)
+ggsave("img/fig-io-practice-scale-0.3.png", p1, scale = 0.6)
+#> Saving 4.2 x 3 in image
+ggsave("img/fig-io-practice-scale-2.png", p2, scale = 2)
+#> Saving 14 x 10 in image
+ggsave("img/fig-io-practice-base-size-20.png", p3)
+#> Saving 7 x 5 in image
+ggsave("img/fig-io-practice-base-size-3.png", p4)
+#> Saving 7 x 5 in image
+
+#Grid Extra example from Jenny Bryan
 library(gridExtra)
 
-#Jenny Bryan
 p_dens <- ggplot(gapminder, aes(x = gdpPercap)) + geom_density() + scale_x_log10() +
         theme(axis.text.x = element_blank(),
               axis.ticks = element_blank(),
@@ -587,51 +975,8 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 }
 multiplot(p1, p2, p3, p4, cols = 2)
 
-# Try plotly for interactive plots ####
-# Need a free acount to post plots but can use on own computer for free, works with Python and Matlab too
-# More info: https://plot.ly/r/getting-started/
+#To save in binary format to preserve formatting for factors
+saveRDS()
 
-# Install package and load library
-install.packages("plotly")
-library(plotly) #Yes if needs compilation question comes up
-
-# Development version
-devtools::install_github("ropensci/plotly")
-
-#use dev version of ggplot2 with ggplotly()
-devtools::install_github('hadley/ggplot2')
-library(ggplot2)
-
-#Link plotly account through API
-# set plotly user name
-Sys.setenv("plotly_username"="YOUR_plotly_username")
-# set plotly API key
-Sys.setenv("plotly_api_key"="YOUR_api_key")
-
-#Basic functions
-plot_ly
-ggplotly
-
-#Example with ggplot
-diamond_freqpoly <-  ggplot(data = diamonds, mapping = aes(x = carat, colour = cut)) +
-        geom_freqpoly(binwidth = 0.1)
-
-ggplotly(diamond_freqpoly)
-
-#Base plot
-str(midwest) #demographic info of midwest counties
-p <- plot_ly(midwest, x = ~percollege, color = ~state, type = "box")
-p
-
-#double click to isolate one state
-
-# publish plotly plot to your plotly online account
-py
-api_create(p, filename = "r-docs-midwest-boxplots")
-
-
-
-# Dealing with factors ####
-gapminder <- gapminder %>%
-        mutate(country = factor(country),
-               continent = factor(continent))
+#to remove extra files
+file.remove(list.files(pattern = "^gap_life_exp"))  #remove extra plots in environment all ending in gap_life_exp

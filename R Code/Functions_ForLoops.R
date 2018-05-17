@@ -77,18 +77,10 @@ mean_ci <- function(x, conf = 0.95) { # x = data, conf = detail, most common val
         mean(x) + se * qnorm(c(alpha / 2, 1 - alpha / 2))
 }
 
-<<<<<<< HEAD
-x <- runif(100)##randomly selects 100 numbers between 0 and 100
-mean_ci(x)
-=======
-x <- runif(100)
-mean_ci(x, conf = 0.9)
-#> [1] 0.498 0.610
->>>>>>> ee83819c7577fbb14cf2fe57ff4300481d2e1e47
 
 mean_ci(x, conf = 0.99) # can change default value
 
-# Debug code - R recycles vectors so need to explicit check if vectors not the same leght and through error message
+# Debug code - R recycles vectors so need to explicit check if vectors not the same length and through error message
 
 wt_mean(1:6, 1:3)
 
@@ -204,7 +196,45 @@ if (this) {
 }
 
 # Linear interpolation example ####
+library(zoo) #for time series data
+library(rLakeAnalyzer) #for heat map plots
 
+Crystal_2014_wtrtemp = read_csv("Data/Crystal_2014_wtrtemp.csv")
+
+data = Crystal_2014_wtrtemp
+data$datetime = as.POSIXct(data$datetime)
+
+depths = get.offsets(data)
+ncols = ncol(data)
+
+for(i in 1:nrow(data)){
+        
+        values = unlist(data[i,2:ncols])
+        
+        if(sum(!is.na(values)) <= floor(ncols/4)){
+                #if there isn't at least 25% of the data, then we skip it - might want to modify if needed 
+                next
+        }
+        
+        new_vals = na.approx(values,x=depths, xout=depths, na.rm=FALSE)
+        
+        data[i, 2:ncols] = new_vals	
+}
+
+wtr.heat.map(data, main="after x-depth interp")
+
+maxgap = 2  #Fill gaps = 1 day
+
+for(i in 2:ncol(data)){
+        
+        values = unlist(data[, i])
+        
+        new_vals = na.approx(values, x=data$datetime, xout=data$datetime, na.rm=FALSE, maxgap=maxgap)
+        
+        data[, i] = new_vals	
+}
+
+wtr.heat.map(data, main="after both interp")
 
 # For loops ####
 

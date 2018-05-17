@@ -647,14 +647,61 @@ flights %>%
 # union = return unique observations in x & y
 # setdiff = return observations in x but not in y
 
-# Factors - forcats package ####
+# Strings - stringr package ####
+library(stringr) #also installs as part of tidyverse
 
-library(forcats)
+# Package for dealing with character data which are also known as strings
 
-# Make a list of different levels
+# Base R functions for dealing with strings but stringr more consistent
+nchar(), strsplit(), substr(), paste(), paste0()
 
-month_levels <- c("Jan", "Feb", "Mar")
+# Examples part of stringr package - fruit, words, sentences
+?fruit
+View(fruit)
+str(fruit)
 
-#Function factor very useful
-factor(months, month_levels) #list of months, levels that you want the factor ordered in
+#Detect presence/absence in string and look for pattern
+# How many fruits have fruit in the name?
+str_detect(fruit, pattern = "fruit")
+
+#create subset
+my_fruit <- str_subset(fruit, pattern = "fruit")
+head(my_fruit)
+
+#split strings - generates a list
+str_split(my_fruit, pattern = " ") #can also use underscore or comma
+
+#can generate character matrix
+str_split_fixed(my_fruit, pattern = " ", n = 2)
+
+#separate function from tidyr good for strings in data frame
+my_fruit_df <- tibble(my_fruit)
+my_fruit_df %>% 
+        separate(my_fruit, into = c("pre", "post"), sep = " ")
+
+#Count number of characters in a string with str_length not the same as the length of the vector
+str_length(my_fruit)
+length(my_fruit)
+
+#Replace or extract strings by position
+str_sub(fruit, 1,3) #1st through the 3rd characters in the strings - numbers correspond to start & end
+
+#Assignment to replace characters
+(x <- head(fruit, 3))
+
+str_sub(x, 1, 3) <- "AAA"
+x
+
+#Replace NA values
+str_replace_na()
+
+melons <- str_subset(fruit, pattern = "melon")
+View(melons)
+melons[2] <- NA #replace 2nd element in list with NA
+melons
+str_replace_na(melons, "UNKNOWN MELON") #Replace NA with UNKNOWN MELON
+str_replace_na(melons, 22) #Replace NA with 22
+
+#More general replace
+str_replace(my_fruit, pattern = "fruit", replacement = "vegetable")
 
