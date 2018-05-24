@@ -297,12 +297,12 @@ output <- vector("list", length(Crystal))
 
 for (i in seq_along(newtime)) {
         if (newtime[i]$hour < 24) {
-        newtime[i]$min = 30
+        newtime[i]$min = newtime[i]$min + 3
         }
      
 }
 
-newtime
+head(newtime)
 
 # Example to read in a bunch of csv files
 

@@ -861,7 +861,7 @@ symbols(costcos$Longitude, costcos$Latitude, circles = rep(1, length(costcos$Lon
 # all circles same size
 
 # Clean up - Hawaii & AK use world map instead of state
-map(database = "state", col = "#cccccc") #hexadecimal colors = light gray
+map(database = "world", col = "#cccccc") #hexadecimal colors = light gray
 symbols(costcos$Longitude, costcos$Latitude, bg = "#e2373f", fg = "white", lwd = 0.5, circles = rep(1, length(costcos$Longitude)), inches = 0.05, add = TRUE) 
 
 # More info on hexadecimal color specification in R if curious: http://stat545.com/block018_colors.html
@@ -869,6 +869,8 @@ symbols(costcos$Longitude, costcos$Latitude, bg = "#e2373f", fg = "white", lwd =
 # Map for specific regions - may have to clear previous plots or use dev.off
 map(database = "state", region = c("California", "Nevada", "Oregon", "Washington"), col = "#cccccc") #hexadecimal colors = light gray
 symbols(costcos$Longitude, costcos$Latitude, bg = "#e2373f", fg = "white", lwd = 0.5, circles = rep(1, length(costcos$Longitude)), inches = 0.05, add = TRUE) 
+
+map(database = "world", region = c("Canada"))
 
 #Bubble map - area of bubbles related to additional variable
 #adolescent fertility rate worldwide
