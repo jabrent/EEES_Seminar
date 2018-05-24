@@ -53,7 +53,7 @@ ui <- fluidPage(
         )
 )
 
-# Define server logic required to draw a histogram ----
+# Define server logic required to draw a histogram ---- ####
 server <- function(input, output) {
         
         # Histogram of the Old Faithful Geyser Data ----
@@ -78,6 +78,7 @@ server <- function(input, output) {
 }
 
 shinyApp(ui, server)
+####
 
 # Primary components of shiny app:
 # 1. User interface - design layout of app using HTML coding you write using Shiny's functions
@@ -107,6 +108,7 @@ runApp()
 #sidebarLayout() to add a simple structure. It provides a simple two-column layout with a smaller sidebar and a larger main panel. We’ll build our app such that all the inputs that the user can manipulate will be in the sidebar, and the results will be shown in the main panel on the right.
 
 #Inputs = gives users a way to interact with a Shiny app, every input must have a unique inputId
+sliderInput(inputId = "num", label = "Choose a number", min = , max = , value = )
 
 #textInput() is used to let the user enter text, numericInput() lets the user select a number, dateInput() is for selecting a date, selectInput() is for creating a select box (aka a dropdown menu).
 
@@ -123,6 +125,8 @@ runApp()
 #1. Save the output object into the output list (remember the app template - every server function has an output argument)
 #2. Build the object with a render* function, where * is the type of output
 #3. Access input values using the input list (every server function has an input argument)
+
+plotOutput(outputID = "hist")
 
 # Reactive programming in Shiny
 
