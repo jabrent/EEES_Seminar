@@ -30,7 +30,7 @@ shinyApp(ui = ui, server = server)
 #Step 4: Add official title and side bar layout
 ui <- fluidPage(
         titlePanel("BC Liquor Store prices"), #Adds official website title - will show up as name of tab in browser
-        sidebarLayout(
+        sidebarLayout( # adds layout for sidebar
                 sidebarPanel("our inputs will go here"),
                 mainPanel("the results will go here")
         )
@@ -46,7 +46,7 @@ shinyApp(ui = ui, server = server)
 ui <- fluidPage(
         titlePanel("BC Liquor Store prices"),
         sidebarLayout(
-                sidebarPanel(sliderInput("priceInput", "Price", min = 0, max = 100, 
+                sidebarPanel(sliderInput("priceInput", "Price", min = 0, max = 100, #Adds slider input 
                                          value = c(25, 40), pre = "$")), 
                 mainPanel("the results will go here")
         )
@@ -329,7 +329,7 @@ server <- function(input, output) {
                         geom_histogram()
         })
         
-        output$results <- renderTable({
+        output$results <- renderTable({ #don't need the if statement here but tables are ok rendering NULL values
                 filtered() #uses reactive variable
         
         })

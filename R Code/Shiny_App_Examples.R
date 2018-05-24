@@ -20,6 +20,65 @@ shinydashboard #tools for creating visual "dashboards"
 # Test example - see more examples at: ShowMeShiny.com
 runExample("01_hello")
 
+# Example of basic Shiny app for Yellowstone Old Faithful geyser eruptions
+
+# Define UI for app that draws a histogram ----
+ui <- fluidPage(
+        
+        # App title ----
+        titlePanel("Hello Shiny!"),
+        
+        # Sidebar layout with input and output definitions ----
+        sidebarLayout(
+                
+                # Sidebar panel for inputs ----
+                sidebarPanel(
+                        
+                        # Input: Slider for the number of bins ----
+                        sliderInput(inputId = "bins",
+                                    label = "Number of bins:",
+                                    min = 1,
+                                    max = 50,
+                                    value = 30)
+                        
+                ),
+                
+                # Main panel for displaying outputs ----
+                mainPanel(
+                        
+                        # Output: Histogram ----
+                        plotOutput(outputId = "distPlot")
+                        
+                )
+        )
+)
+
+# Define server logic required to draw a histogram ----
+server <- function(input, output) {
+        
+        # Histogram of the Old Faithful Geyser Data ----
+        # with requested number of bins
+        # This expression that generates a histogram is wrapped in a call
+        # to renderPlot to indicate that:
+        #
+        # 1. It is "reactive" and therefore should be automatically
+        #    re-executed when inputs (input$bins) change
+        # 2. Its output type is a plot
+        output$distPlot <- renderPlot({
+                
+                x    <- faithful$waiting
+                bins <- seq(min(x), max(x), length.out = input$bins + 1)
+                
+                hist(x, breaks = bins, col = "#75AADB", border = "white",
+                     xlab = "Waiting time to next eruption (in mins)",
+                     main = "Histogram of waiting times")
+                
+        })
+        
+}
+
+shinyApp(ui, server)
+
 # Primary components of shiny app:
 # 1. User interface - design layout of app using HTML coding you write using Shiny's functions
 # 2. Server - logic of the app, instructions for web page
@@ -84,3 +143,4 @@ x <- 10
 #RStudio provides a service called shinyapps.io which lets you host your apps for free. It is integrated seamlessly into RStudio so that you can publish your apps with the click of a button, and it has a free version. The free version allows a certain number of apps per user and a certain number of activity on each app, but it should be good enough for most of you. It also lets you see some basic stats about usage of your app.
 
 #Hosting your app on shinyapps.io is the easy and recommended way of getting your app online. Go to www.shinyapps.io and sign up for an account. When you’re ready to publish your app, click on the “Publish Application” button in RStudio and follow their instructions. You might be asked to install a couple packages if it’s your first time.
+
