@@ -9,6 +9,9 @@
 install.packages("shiny")
 library(shiny)
 
+bcl <- read.csv("R Code/Shiny/bcl-data.csv", stringsAsFactors = FALSE)
+View(bcl)
+
 # Other useful pacakges
 
 shinythemes #alter the appearance

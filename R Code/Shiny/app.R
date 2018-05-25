@@ -1,7 +1,7 @@
 library(shiny)
 library(ggplot2)
 library(dplyr)
-bcl <- read.csv("bcl-data.csv", stringsAsFactors = FALSE)
+bcl <- read.csv("R Code/Shiny/bcl-data.csv", stringsAsFactors = FALSE)
 #print(str(bcl)) # remove
 
 #Step 1: Basic Set-up
@@ -37,7 +37,7 @@ ui <- fluidPage(
 )
 server <- function(input, output) {}
 shinyApp(ui = ui, server = server)
-
+print(ui)
 # Remember UI is all HTML - print(ui)
 
 #Step 5: Add inputs to UI for price range - min & max with slider
@@ -114,6 +114,7 @@ server <- function(input, output) {
         })
         
 }
+shinyApp(ui = ui, server = server)
 
 #server <- function(input, output) {
         output$coolplot <- renderPlot({
